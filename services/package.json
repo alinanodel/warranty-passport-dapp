@@ -1,0 +1,26 @@
+{
+  "name": "warranty-passport-services",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "node server.mjs",
+    "start": "node server.mjs"
+  },
+  "dependencies": {
+    "@helia/unixfs": "latest",
+    "@x402/core": "latest",
+    "@x402/evm": "latest",
+    "@x402/express": "latest",
+    "blockstore-fs": "latest",
+    "cors": "latest",
+    "datastore-fs": "latest",
+    "express": "latest",
+    "helia": "latest",
+    "multer": "latest",
+    "viem": "2.53.1"
+  },
+  "overrides": {
+    "ws": "8.21.0"
+  }
+}

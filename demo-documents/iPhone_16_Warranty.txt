@@ -1,0 +1,19 @@
+WARRANTY PASSPORT - EDUCATIONAL DEMO
+
+Product: iPhone 16
+Category: Smartphone
+Serial number: IP16-DEMO-2026-001
+Purchase date: 2026-07-03
+Warranty period: 365 days
+Warranty status: Active
+Registered owner: 0x34a6746F8BC407A98957cdF565dCEDDca5420E77
+
+Coverage:
+- Manufacturing defects during the warranty period
+- Hardware diagnostics and authorized repair records
+- Ownership and service events recorded in the Warranty Passport Dapp
+
+Important:
+This file is an educational demonstration document created for a student
+blockchain project. It is not an invoice, proof of purchase, or official
+Apple warranty document.

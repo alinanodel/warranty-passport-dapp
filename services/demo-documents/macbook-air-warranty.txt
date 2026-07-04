@@ -1,0 +1,5 @@
+Warranty Passport Demo Document
+Product: MacBook Air
+Serial: MBA-DEMO-002
+Warranty period: 365 days
+Document type: Warranty certificate and purchase receipt

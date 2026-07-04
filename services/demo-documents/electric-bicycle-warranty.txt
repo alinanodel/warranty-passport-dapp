@@ -1,0 +1,5 @@
+Warranty Passport Demo Document
+Product: Electric Bicycle
+Serial: EBIKE-DEMO-003
+Warranty period: 365 days
+Document type: Warranty certificate and purchase receipt

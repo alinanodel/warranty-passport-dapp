@@ -1,0 +1,31 @@
+{
+  "name": "contracts",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "deploy:local": "hardhat run scripts/deploy.ts",
+    "deploy:localhost": "CONTRACT_OWNER=0x34a6746F8BC407A98957cdF565dCEDDca5420E77 hardhat run --network localhost scripts/deploy.ts",
+    "deploy:sepolia": "SEED_DEMO=false hardhat run --network sepolia scripts/deploy.ts",
+    "finalize:sepolia": "hardhat run --network sepolia scripts/finalize-sepolia.ts",
+    "seed:sepolia": "hardhat run --network sepolia scripts/seed-sepolia.ts",
+    "transfer-demo:sepolia": "hardhat run --network sepolia scripts/transfer-demo-sepolia.ts",
+    "node": "hardhat node",
+    "test": "hardhat test"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "devDependencies": {
+    "@nomicfoundation/hardhat-toolbox": "^7.0.0",
+    "@nomicfoundation/hardhat-toolbox-viem": "^5.0.7",
+    "@types/node": "^22.20.0",
+    "hardhat": "^3.9.0",
+    "typescript": "~6.0.3",
+    "viem": "^2.53.1"
+  },
+  "dependencies": {
+    "@openzeppelin/contracts": "^5.6.1"
+  }
+}
