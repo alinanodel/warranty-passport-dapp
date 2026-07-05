@@ -1,7 +1,16 @@
-# Sample Hardhat 3 Project (minimal)
+# Warranty Passport contracts
 
-This project has a minimal setup of Hardhat 3, without any plugins.
+Run `npm test` before deployment. Sepolia deployment writes both the frontend ABI/address file and `deployments/11155111.json`; verification reads that manifest, so no address should be copied manually.
 
-## What's included?
+```bash
+npm run deploy:sepolia
+npm run verify:sepolia
+npm run seed:sepolia
+npm run demo-state:sepolia
+```
 
-The project includes native support for TypeScript, Hardhat scripts, tasks, and support for Solidity compilation and tests.
+Store the configuration variables listed in `.env.example` with:
+
+```bash
+npx hardhat keystore set VARIABLE_NAME
+```

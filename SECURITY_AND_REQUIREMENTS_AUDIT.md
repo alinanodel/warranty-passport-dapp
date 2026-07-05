@@ -1,108 +1,69 @@
 # Warranty Passport Security and Requirements Audit
 
-Date: 2026-07-04
+Date: 2026-07-05
 
-## Publication decision
+## Decision
 
-The patched contracts are deployed to Sepolia and the frontend points to their
-verified addresses. The Solidity system is suitable for a student testnet demo.
-Public release is still blocked on public IPFS/service hosting, live X402
-settlement, and external-device QR verification.
+The hardened contracts are deployed to Sepolia and verified as Exact Match. All demo IPFS references are pinned and publicly retrievable from Filebase. Release remains incomplete until Render is updated, one real X402 settlement is recorded and a phone QR test is preserved. No audit can guarantee that a contract is impossible to hack. This assessment is suitable for a student testnet demonstration, not for custody of real-value assets.
 
-No audit can prove that a contract is impossible to hack. This review combines
-manual analysis, automated tests, Slither static analysis, and dependency audits.
-It is appropriate for a student testnet project, not a substitute for an
-independent professional audit of contracts that hold real value.
+Current Sepolia addresses:
+
+- WarrantyManager: `0x2232c9bf2f106008fb0f0a4a4c395c7ea3f4aa61`
+- WarrantyNFT: `0xd12d2e9d46ee4c9905aaff9573ae90bf98b78cd2`
+- WarrantyToken: `0xdb27f9a0152180dbd53832f491c68badbe58e339`
 
 ## Requirements matrix
 
-| Requirement | Status | Evidence / remaining work |
+| Requirement | Code status | Production evidence required |
 | --- | --- | --- |
-| Product registration with required fields | Complete | `WarrantyManager.registerProduct` and React form |
-| NFT for every product | Complete | `WarrantyNFT.mintPassport` |
-| IPFS warranty and additional documents | Partial | Upload, retrieval and on-chain URIs work; public pinning/hosting is missing |
-| Ownership transfer, date, owner and price | Complete | Contract, history, event and UI are implemented |
-| 10% creator fee | Partial | Enforced on declared price, but the seller declares the price and pays the fee |
-| ERC20 used for fees or rewards | Complete | Registration fee, transfer fee and registration reward use WTY |
-| Warranty validity | Complete | Active and expired states use purchase date and warranty period |
-| Active, expired, transferred, problematic | Complete | Contract and UI support all required states |
-| Service history with IPFS and date | Complete | Contract and UI are implemented |
-| Lost/stolen warning | Complete | Safety status is stored and displayed |
-| Accumulated histories | Complete | Owner, service, document and status histories are retained |
-| Actual X402 payment | Partial | HTTP 402, live middleware and a real Sepolia product report exist; settlement with Base Sepolia USDC has not been executed |
-| QR public verification | Partial | QR and public route exist; permanent public hosting is missing |
-| MetaMask dashboard and owner actions | Complete | Connection, account switch, details and actions are implemented |
-| Three separate required contracts | Complete | WarrantyNFT, WarrantyToken and WarrantyManager |
-| Required Solidity events | Complete | All five required event types are emitted |
-| Three required demo products | Complete | iPhone 15, MacBook Air and Electric Bicycle are registered in Sepolia |
-| Sepolia deployment | Complete | Patched contracts, roles, treasury and frontend configuration are verified |
+| Product registration and NFT mint | Complete | Four products registered on Sepolia |
+| ERC20 fees/rewards and 10% creator fee | Complete | iPhone transfer verified |
+| Permanent IPFS | Complete | 13 on-chain references returned HTTP 200 |
+| Standard NFT metadata JSON | Complete | Four metadata/image pairs pinned |
+| Ownership/document/service/status histories | Complete | Paginated getters and UI records |
+| Service Record with IPFS | Complete | MacBook inspection record on-chain |
+| Lost/Stolen warning | Complete | Electric Bicycle marked Lost |
+| Public page and QR | Complete | Scan from a phone without MetaMask |
+| All products / My products | Complete | Filter and frontend test |
+| Wallet-authorized upload | Complete | Signature challenge and backend tests |
+| Live X402 report | Complete in code | Set live mode, settle USDC and save proof |
+| Exact Match verification | Complete | All three Etherscan pages confirmed |
+| Vercel/Render deployment | Configured | Deploy after new contract JSON exists |
 
-Estimated strict requirements completion: about 92%. Public, independently
-usable deployment readiness: about 82%.
+## Security controls
 
-## Security fixes applied
+- Direct and operator ERC721 transfers revert, preventing history bypass.
+- NFT manager assignment is one-time and deployment removes deployer token admin/minter roles.
+- WTY supply is capped; serials are unique; category, IPFS URIs, dates, service descriptions and positive prices are validated.
+- State updates precede external safe NFT transfer and rejecting receivers roll back the operation.
+- Upload requires a fresh single-use EIP-191 signature, expires after five minutes, is rate-limited and capped at 20 MB.
+- Render no longer stores IPFS blocks on ephemeral disk. Uploads pin directly through Filebase RPC.
+- Frontend and backend retry transient Sepolia RPC reads three times.
+- X402 uses Base Sepolia USDC and downloads settlement evidence with transaction hash.
+- History APIs enforce page sizes from 1 to 100. Legacy full-array getters remain for compatibility.
 
-- Direct ERC721 transfers now revert, so NFT ownership cannot bypass
-  `WarrantyManager` or corrupt ownership history.
-- The NFT manager can only be configured once.
-- Manager transfers use safe ERC721 delivery.
-- WTY has a hard maximum supply.
-- The deployment script removes deployer minter and default-admin roles after
-  granting the immutable manager its role.
-- Duplicate serial numbers are rejected.
-- Product and service dates and IPFS URI prefixes are validated.
-- Zero-price ownership transfers are rejected.
-- State is updated before the external NFT transfer.
-- A separate fee-recipient setting is available for deployment.
-- Frontend and backend service URLs are environment-configurable.
-- IPFS uploads have a 20 MB limit and a basic per-IP hourly rate limit.
-- The paid X402 handler builds its report from current Sepolia product,
-  ownership, service, document and status data.
+## Automated verification
 
-## Verification performed
-
-- Hardhat compile with Solidity 0.8.28: passed.
-- Contract tests: 17 passed.
-- Exploit regression tests: direct NFT transfer, manager replacement, duplicate
-  serial, invalid IPFS, zero-price transfer, approved-operator bypass,
-  rejecting-receiver rollback, former-owner access and supply-cap checks passed.
-- Slither: 30 contracts and 101 detectors analyzed. No high/medium project-code
-  finding remained. Expected informational findings concern timestamps and a
-  benign callback during safe minting.
-- Runtime dependency audit: zero known vulnerabilities in contracts, frontend
-  and services.
+- Solidity 0.8.28 with optimizer and `viaIR`: compiled.
+- Contract tests: 18 passed.
+- Backend tests: 7 passed.
+- Frontend tests: 4 passed.
 - Production frontend build: passed.
-- NFT and Token Sepolia bytecode exactly match local artifacts. Manager bytecode
-  matches after normalizing compiler-injected immutable addresses.
-- Sepolia simulations confirmed that direct NFT transfer and manager replacement
-  attacks revert.
-- Three demo CIDs returned HTTP 200. Service health returned HTTP 200 and the
-  X402 endpoint returned a standards-shaped HTTP 402 challenge.
-- The extended report builder returned current iPhone 15 data, two ownership
-  records and its document list from Sepolia.
+- Rerun `npm audit` immediately before submission.
 
-## Residual risks before publication
+## Residual risks
 
-1. A single owner wallet controls registration, fees and administrative status
-   changes. Use a dedicated test wallet and never expose its private key.
-2. The transfer price is self-reported. A buyer-acceptance sale flow is needed
-   if the 10% fee must be economically tamper-resistant.
-3. `tokenURI` points to a document rather than ERC721 metadata JSON. The NFT is
-   valid but may not render correctly in marketplaces.
-4. Full-array history reads and owner-product scans are not paginated and can
-   become expensive at large scale.
-5. The public IPFS upload service has basic rate limiting but still needs wallet
-   authorization before accepting untrusted internet uploads.
-6. IPFS content must be pinned on a public provider or a continuously running
-   public node.
-7. X402 must be tested with live facilitator settlement and Base Sepolia USDC.
-8. A previous long-running local Helia process became unresponsive at 100% CPU.
-   Public hosting needs automatic restart/health supervision.
-9. The dashboard identifies owned products but still lists every public product.
-   Add an explicit "My products" filter if the requirement is graded literally.
+1. One owner wallet controls registration and administrative statuses. Keep it testnet-only.
+2. The seller declares transfer price. The royalty cannot prove an off-chain payment amount.
+3. Exact Match depends on deployment compiler settings and generated constructor arguments.
+4. Filebase, Render, Vercel, public RPC and facilitator are external dependencies.
+5. High-volume indexers should use bounded page getters, not compatibility full-array getters.
 
-## Required release gate
+## Release gate
 
-1. Pin all referenced CIDs publicly.
-2. Host the services securely and enable/test live X402.
-3. Deploy the frontend and test the QR URL from another device without localhost.
+- New `contracts/deployments/11155111.json`: complete.
+- Three Etherscan **Exact Match** pages: complete.
+- Successful `npm run check:cids`, including `PA_102` and service CID: complete.
+- Render `/health` showing Filebase and live X402.
+- X402 proof JSON and Base Sepolia transaction hash.
+- Screenshot of Lost warning and phone screenshot of QR-opened public page.

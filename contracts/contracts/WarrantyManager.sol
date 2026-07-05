@@ -34,6 +34,7 @@ contract WarrantyManager is Ownable, ReentrancyGuard {
         uint256 warrantyPeriod;
         uint256 originalPrice;
         string primaryIpfsHash;
+        string metadataIpfsHash;
         address currentOwner;
         address originalCreator;
         uint256 tokenId;
@@ -154,15 +155,19 @@ contract WarrantyManager is Ownable, ReentrancyGuard {
         uint256 purchaseDate,
         uint256 warrantyPeriod,
         uint256 originalPrice,
-        string calldata ipfsHash,
+        string calldata documentIpfsHash,
+        string calldata metadataIpfsHash,
         address productOwner
     ) external onlyOwner nonReentrant returns (uint256 productId, uint256 tokenId) {
         require(bytes(name).length > 0, "Name is required");
+        require(bytes(category).length > 0, "Category is required");
         require(bytes(serialNumber).length > 0, "Serial number is required");
-        require(_isIpfsUri(ipfsHash), "Invalid IPFS URI");
+        require(_isIpfsUri(documentIpfsHash), "Invalid document IPFS URI");
+        require(_isIpfsUri(metadataIpfsHash), "Invalid metadata IPFS URI");
         require(productOwner != address(0), "Invalid product owner");
         require(purchaseDate > 0 && purchaseDate <= block.timestamp, "Invalid purchase date");
         require(warrantyPeriod > 0, "Warranty period is required");
+        require(originalPrice > 0, "Original price is required");
         bytes32 serialHash = keccak256(bytes(serialNumber));
         require(!_registeredSerialNumbers[serialHash], "Serial number already registered");
         _registeredSerialNumbers[serialHash] = true;
@@ -172,7 +177,7 @@ contract WarrantyManager is Ownable, ReentrancyGuard {
         }
 
         productId = _nextProductId++;
-        tokenId = warrantyNFT.mintPassport(productOwner, productId, ipfsHash);
+        tokenId = warrantyNFT.mintPassport(productOwner, productId, metadataIpfsHash);
 
         _products[productId] = Product({
             productId: productId,
@@ -182,7 +187,8 @@ contract WarrantyManager is Ownable, ReentrancyGuard {
             purchaseDate: purchaseDate,
             warrantyPeriod: warrantyPeriod,
             originalPrice: originalPrice,
-            primaryIpfsHash: ipfsHash,
+            primaryIpfsHash: documentIpfsHash,
+            metadataIpfsHash: metadataIpfsHash,
             currentOwner: productOwner,
             originalCreator: msg.sender,
             tokenId: tokenId,
@@ -192,14 +198,14 @@ contract WarrantyManager is Ownable, ReentrancyGuard {
         });
 
         _ownershipHistory[productId].push(OwnershipRecord(productOwner, block.timestamp, originalPrice));
-        _documents[productId].push(DocumentRecord("Warranty document", ipfsHash, block.timestamp, msg.sender));
+        _documents[productId].push(DocumentRecord("Warranty document", documentIpfsHash, block.timestamp, msg.sender));
 
         if (registrationReward > 0) {
             warrantyToken.mintReward(productOwner, registrationReward);
         }
 
-        emit ProductRegistered(productId, tokenId, productOwner, name, ipfsHash);
-        emit DocumentAdded(productId, 0, "Warranty document", ipfsHash, msg.sender);
+        emit ProductRegistered(productId, tokenId, productOwner, name, documentIpfsHash);
+        emit DocumentAdded(productId, 0, "Warranty document", documentIpfsHash, msg.sender);
         _recordStatus(productId);
     }
 
@@ -263,6 +269,7 @@ contract WarrantyManager is Ownable, ReentrancyGuard {
         Product storage product = _requireProduct(productId);
         require(msg.sender == product.currentOwner || msg.sender == owner(), "Not authorized");
         require(bytes(serviceType).length > 0, "Service type is required");
+        require(bytes(description).length > 0, "Description is required");
         require(_isIpfsUri(ipfsHash), "Invalid IPFS URI");
         require(servicedAt > 0 && servicedAt <= block.timestamp, "Invalid service date");
 
@@ -336,6 +343,54 @@ contract WarrantyManager is Ownable, ReentrancyGuard {
         return _statusHistory[productId];
     }
 
+    function getOwnershipHistoryPage(
+        uint256 productId,
+        uint256 offset,
+        uint256 limit
+    ) external view returns (OwnershipRecord[] memory records, uint256 total) {
+        _requireProduct(productId);
+        total = _ownershipHistory[productId].length;
+        (uint256 start, uint256 end) = _pageBounds(total, offset, limit);
+        records = new OwnershipRecord[](end - start);
+        for (uint256 i = start; i < end; i++) records[i - start] = _ownershipHistory[productId][i];
+    }
+
+    function getServiceHistoryPage(
+        uint256 productId,
+        uint256 offset,
+        uint256 limit
+    ) external view returns (ServiceRecord[] memory records, uint256 total) {
+        _requireProduct(productId);
+        total = _serviceHistory[productId].length;
+        (uint256 start, uint256 end) = _pageBounds(total, offset, limit);
+        records = new ServiceRecord[](end - start);
+        for (uint256 i = start; i < end; i++) records[i - start] = _serviceHistory[productId][i];
+    }
+
+    function getDocumentsPage(
+        uint256 productId,
+        uint256 offset,
+        uint256 limit
+    ) external view returns (DocumentRecord[] memory records, uint256 total) {
+        _requireProduct(productId);
+        total = _documents[productId].length;
+        (uint256 start, uint256 end) = _pageBounds(total, offset, limit);
+        records = new DocumentRecord[](end - start);
+        for (uint256 i = start; i < end; i++) records[i - start] = _documents[productId][i];
+    }
+
+    function getStatusHistoryPage(
+        uint256 productId,
+        uint256 offset,
+        uint256 limit
+    ) external view returns (StatusRecord[] memory records, uint256 total) {
+        _requireProduct(productId);
+        total = _statusHistory[productId].length;
+        (uint256 start, uint256 end) = _pageBounds(total, offset, limit);
+        records = new StatusRecord[](end - start);
+        for (uint256 i = start; i < end; i++) records[i - start] = _statusHistory[productId][i];
+    }
+
     function getProductsByOwner(address productOwner) external view returns (uint256[] memory) {
         uint256 count = 0;
         for (uint256 i = 1; i < _nextProductId; i++) {
@@ -375,5 +430,16 @@ contract WarrantyManager is Ownable, ReentrancyGuard {
             if (data[i] != prefix[i]) return false;
         }
         return true;
+    }
+
+    function _pageBounds(
+        uint256 length,
+        uint256 offset,
+        uint256 limit
+    ) internal pure returns (uint256 start, uint256 end) {
+        require(limit > 0 && limit <= 100, "Invalid page size");
+        start = offset < length ? offset : length;
+        uint256 remaining = length - start;
+        end = start + (limit < remaining ? limit : remaining);
     }
 }

@@ -27,29 +27,18 @@ assert.equal(
   "Demo products already exist; refusing to seed twice",
 );
 
-const products = [
-  {
-    name: "iPhone 15",
-    category: "Phone",
-    serialNumber: "IPH15-DEMO-001",
-    price: parseEther("800"),
-    ipfsUri: "ipfs://QmPaAWVPaCpV4XsZ4qv7ZcSw9purkCcYyGLNSkLfog8Udo",
-  },
-  {
-    name: "MacBook Air",
-    category: "Computer",
-    serialNumber: "MBA-DEMO-002",
-    price: parseEther("1200"),
-    ipfsUri: "ipfs://QmbJJziDVx658hVHSDd5DWxhEtJSah9KKZ449DfKToWmxc",
-  },
-  {
-    name: "Electric Bicycle",
-    category: "Mobility",
-    serialNumber: "EBIKE-DEMO-003",
-    price: parseEther("1800"),
-    ipfsUri: "ipfs://QmREaaPm86gARMVgtUFNZ8B89wG8Mr1qCdGBbeF8oG5dF3",
-  },
-] as const;
+const demoAssets = JSON.parse(
+  await readFile(new URL("../../services/demo-assets.json", import.meta.url), "utf8"),
+) as Array<{
+  name: string;
+  category: string;
+  serialNumber: string;
+  price: string;
+  documentUri: string;
+  metadataUri: string;
+}>;
+assert.equal(demoAssets.length, 4, "Pin all four demo products before seeding");
+const products = demoAssets.map((product) => ({ ...product, price: parseEther(product.price) }));
 
 const registrationFee = await manager.read.registrationFee();
 const approveHash = await token.write.approve([
@@ -68,11 +57,12 @@ for (const product of products) {
     purchaseDate,
     365n * 86_400n,
     product.price,
-    product.ipfsUri,
+    product.documentUri,
+    product.metadataUri,
     registrar.account.address,
   ]);
   await publicClient.waitForTransactionReceipt({ hash });
 }
 
-assert.equal(await manager.read.totalProducts(), 3n);
+assert.equal(await manager.read.totalProducts(), 4n);
 console.log("Sepolia demo products registered and verified successfully.");

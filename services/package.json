@@ -5,18 +5,17 @@
   "type": "module",
   "scripts": {
     "dev": "node server.mjs",
-    "start": "node server.mjs"
+    "start": "node server.mjs",
+    "test": "node --test",
+    "pin:demo": "node scripts/pin-demo-assets.mjs",
+    "check:cids": "node scripts/check-sepolia-cids.mjs"
   },
   "dependencies": {
-    "@helia/unixfs": "latest",
     "@x402/core": "latest",
     "@x402/evm": "latest",
     "@x402/express": "latest",
-    "blockstore-fs": "latest",
     "cors": "latest",
-    "datastore-fs": "latest",
     "express": "latest",
-    "helia": "latest",
     "multer": "latest",
     "viem": "2.53.1"
   },

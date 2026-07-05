@@ -9,7 +9,9 @@
     "deploy:sepolia": "SEED_DEMO=false hardhat run --network sepolia scripts/deploy.ts",
     "finalize:sepolia": "hardhat run --network sepolia scripts/finalize-sepolia.ts",
     "seed:sepolia": "hardhat run --network sepolia scripts/seed-sepolia.ts",
+    "demo-state:sepolia": "hardhat run --network sepolia scripts/demo-state-sepolia.ts",
     "transfer-demo:sepolia": "hardhat run --network sepolia scripts/transfer-demo-sepolia.ts",
+    "verify:sepolia": "node scripts/verify-sepolia.mjs",
     "node": "hardhat node",
     "test": "hardhat test"
   },

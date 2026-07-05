@@ -1,0 +1,21 @@
+WARRANTY CERTIFICATE
+
+Product: Pictorial Art
+Category: Art
+Serial Number: PA_102
+Purchase Date: 05 July 2026
+Warranty Period: 365 days
+Warranty Expiration Date: 05 July 2027
+Original Price: 1234 WTY
+
+Warranty Terms:
+This certificate confirms the authenticity and warranty registration of the
+artwork identified by serial number PA_102. The warranty covers verified
+manufacturing or material defects during the stated warranty period. Damage
+caused by improper storage, handling, transportation, moisture, fire, or
+unauthorized modification is not covered.
+
+This document is intended to be stored in IPFS and linked to the product's
+on-chain Warranty Passport NFT.
+
+Issued: 05 July 2026

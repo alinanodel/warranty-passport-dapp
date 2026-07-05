@@ -1,0 +1,29 @@
+services:
+  - type: web
+    name: warranty-passport-dapp
+    runtime: node
+    rootDir: services
+    buildCommand: npm ci
+    startCommand: npm start
+    healthCheckPath: /health
+    envVars:
+      - key: HOST
+        value: 0.0.0.0
+      - key: PUBLIC_BASE_URL
+        value: https://warranty-passport-dapp.onrender.com
+      - key: CORS_ORIGIN
+        value: https://warranty-passport-dapp.vercel.app
+      - key: X402_LIVE
+        value: "true"
+      - key: X402_PAY_TO
+        value: 0x34a6746F8BC407A98957cdF565dCEDDca5420E77
+      - key: X402_FACILITATOR_URL
+        value: https://x402.org/facilitator
+      - key: FILEBASE_RPC_URL
+        value: https://rpc.filebase.io
+      - key: FILEBASE_GATEWAY_URL
+        value: https://ipfs.filebase.io/ipfs
+      - key: FILEBASE_RPC_TOKEN
+        sync: false
+      - key: SEPOLIA_RPC_URL
+        sync: false

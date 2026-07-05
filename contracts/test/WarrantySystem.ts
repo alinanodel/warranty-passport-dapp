@@ -55,6 +55,7 @@ async function registerProduct(
     365n * DAY,
     parseEther("1000"),
     "ipfs://QmWarrantyDocument",
+    "ipfs://QmWarrantyMetadata",
     owner,
   ]);
   return purchaseDate;
@@ -97,10 +98,11 @@ describe("Warranty Passport system", function () {
     assert.equal(product.serialNumber, "MBA-2026-001");
     assert.equal(product.purchaseDate, purchaseDate);
     assert.equal(product.primaryIpfsHash, "ipfs://QmWarrantyDocument");
+    assert.equal(product.metadataIpfsHash, "ipfs://QmWarrantyMetadata");
     assert.equal(product.currentOwner, getAddress(productOwner.account.address));
     assert.equal(await system.nft.read.ownerOf([1n]), getAddress(productOwner.account.address));
     assert.equal(await system.nft.read.tokenToProductId([1n]), 1n);
-    assert.equal(await system.nft.read.tokenURI([1n]), "ipfs://QmWarrantyDocument");
+    assert.equal(await system.nft.read.tokenURI([1n]), "ipfs://QmWarrantyMetadata");
     assert.equal(await system.manager.read.totalProducts(), 1n);
     assert.equal(
       await system.token.read.balanceOf([productOwner.account.address]),
@@ -129,6 +131,7 @@ describe("Warranty Passport system", function () {
         365n * DAY,
         parseEther("800"),
         "ipfs://QmIPhone",
+        "ipfs://QmIPhoneMetadata",
         productOwner.account.address,
       ]),
       system.manager,
@@ -226,6 +229,38 @@ describe("Warranty Passport system", function () {
     assert.equal(documents[1].documentType, "Repair receipt");
   });
 
+  it("returns bounded pages for all accumulated histories", async function () {
+    const system = await deploySystem();
+    await registerProduct(system);
+    const serviceDate = (await publicClient.getBlock()).timestamp;
+    await system.manager.write.addServiceRecord(
+      [1n, "Inspection", "Passed inspection", "ipfs://QmInspection", serviceDate],
+      { account: productOwner.account },
+    );
+    await system.manager.write.addDocument(
+      [1n, "Inspection report", "ipfs://QmInspectionReport"],
+      { account: productOwner.account },
+    );
+
+    const [ownership, ownershipTotal] = await system.manager.read.getOwnershipHistoryPage([1n, 0n, 1n]);
+    const [services, serviceTotal] = await system.manager.read.getServiceHistoryPage([1n, 0n, 10n]);
+    const [documents, documentTotal] = await system.manager.read.getDocumentsPage([1n, 1n, 1n]);
+    const [statuses, statusTotal] = await system.manager.read.getStatusHistoryPage([1n, 0n, 10n]);
+    assert.equal(ownership.length, 1);
+    assert.equal(ownershipTotal, 1n);
+    assert.equal(services.length, 1);
+    assert.equal(serviceTotal, 1n);
+    assert.equal(documents.length, 1);
+    assert.equal(documentTotal, 2n);
+    assert.equal(statuses.length, 1);
+    assert.equal(statusTotal, 1n);
+
+    await viem.assertions.revertWith(
+      system.manager.read.getDocumentsPage([1n, 0n, 101n]),
+      "Invalid page size",
+    );
+  });
+
   it("supports lost, stolen, and problematic statuses", async function () {
     const system = await deploySystem();
     await registerProduct(system);
@@ -285,6 +320,7 @@ describe("Warranty Passport system", function () {
           365n * DAY,
           parseEther("500"),
           "ipfs://QmWatch",
+          "ipfs://QmWatchMetadata",
           productOwner.account.address,
         ],
         { account: stranger.account },
@@ -441,9 +477,55 @@ describe("Warranty Passport system", function () {
         365n * DAY,
         parseEther("1000"),
         "ipfs://QmDuplicate",
+        "ipfs://QmDuplicateMetadata",
         productOwner.account.address,
       ]),
       "Serial number already registered",
+    );
+
+    await viem.assertions.revertWith(
+      system.manager.write.registerProduct([
+        "No category",
+        "",
+        "NO-CATEGORY-001",
+        purchaseDate,
+        365n * DAY,
+        parseEther("1"),
+        "ipfs://QmDocument",
+        "ipfs://QmMetadata",
+        productOwner.account.address,
+      ]),
+      "Category is required",
+    );
+
+    await viem.assertions.revertWith(
+      system.manager.write.registerProduct([
+        "Free product",
+        "Other",
+        "FREE-001",
+        purchaseDate,
+        365n * DAY,
+        0n,
+        "ipfs://QmDocument",
+        "ipfs://QmMetadata",
+        productOwner.account.address,
+      ]),
+      "Original price is required",
+    );
+
+    await viem.assertions.revertWith(
+      system.manager.write.registerProduct([
+        "Bad metadata",
+        "Other",
+        "BAD-METADATA-001",
+        purchaseDate,
+        365n * DAY,
+        parseEther("1"),
+        "ipfs://QmDocument",
+        "https://example.com/metadata.json",
+        productOwner.account.address,
+      ]),
+      "Invalid metadata IPFS URI",
     );
 
     await viem.assertions.revertWith(

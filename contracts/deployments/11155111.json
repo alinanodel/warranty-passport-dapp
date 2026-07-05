@@ -1,0 +1,37 @@
+{
+  "chainId": 11155111,
+  "network": "sepolia",
+  "deployedAt": "2026-07-05T13:53:37.474Z",
+  "deployer": "0x34a6746f8bc407a98957cdf565dceddca5420e77",
+  "systemOwner": "0x34a6746F8BC407A98957cdF565dCEDDca5420E77",
+  "contracts": {
+    "token": {
+      "address": "0xdb27f9a0152180dbd53832f491c68badbe58e339",
+      "contract": "contracts/WarrantyToken.sol:WarrantyToken",
+      "constructorArgs": [
+        "0x34a6746f8bc407a98957cdf565dceddca5420e77",
+        "1000000000000000000000000"
+      ]
+    },
+    "nft": {
+      "address": "0xd12d2e9d46ee4c9905aaff9573ae90bf98b78cd2",
+      "contract": "contracts/WarrantyNFT.sol:WarrantyNFT",
+      "constructorArgs": [
+        "0x34a6746f8bc407a98957cdf565dceddca5420e77"
+      ]
+    },
+    "manager": {
+      "address": "0x2232c9bf2f106008fb0f0a4a4c395c7ea3f4aa61",
+      "contract": "contracts/WarrantyManager.sol:WarrantyManager",
+      "constructorArgs": [
+        "0x34a6746f8bc407a98957cdf565dceddca5420e77",
+        "0xd12d2e9d46ee4c9905aaff9573ae90bf98b78cd2",
+        "0xdb27f9a0152180dbd53832f491c68badbe58e339",
+        "0x34a6746F8BC407A98957cdF565dCEDDca5420E77",
+        "10000000000000000000",
+        "5000000000000000000",
+        "20000000000000000000"
+      ]
+    }
+  }
+}

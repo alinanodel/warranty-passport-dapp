@@ -494,6 +494,12 @@ a:focus-visible {
   padding: 15px 12px 19px;
 }
 
+.list-heading > div:first-child {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
 .list-heading h2 {
   margin: 0;
   font-size: 0.66rem;
@@ -502,7 +508,8 @@ a:focus-visible {
   text-transform: uppercase;
 }
 
-.list-heading > span {
+.list-heading > span,
+.list-heading > div:first-child > span {
   display: grid;
   width: 26px;
   height: 26px;
@@ -512,6 +519,35 @@ a:focus-visible {
   color: var(--blue);
   font-size: 0.62rem;
   font-weight: 800;
+}
+
+.product-filter {
+  display: flex;
+  gap: 3px;
+  border-radius: 999px;
+  padding: 3px;
+  background: rgba(21, 24, 33, 0.06);
+}
+
+.product-filter button {
+  border: 0;
+  border-radius: 999px;
+  padding: 6px 8px;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 0.54rem;
+  font-weight: 800;
+}
+
+.product-filter button.active {
+  background: var(--white);
+  color: var(--blue);
+}
+
+.product-filter button:disabled {
+  cursor: not-allowed;
+  opacity: 0.4;
 }
 
 .product-row {
@@ -791,6 +827,27 @@ a:focus-visible {
   font-size: 0.64rem;
   font-weight: 800;
   text-decoration: none;
+}
+
+.public-tools button {
+  width: fit-content;
+  margin: 3px 12px 0 0;
+  border: 0;
+  padding: 0;
+  background: transparent;
+  color: var(--blue);
+  cursor: pointer;
+  font-size: 0.64rem;
+  font-weight: 800;
+}
+
+.public-tools button:disabled {
+  cursor: wait;
+  opacity: 0.55;
+}
+
+.public-tools .x402-proof {
+  color: var(--green);
 }
 
 .public-tools a:hover {

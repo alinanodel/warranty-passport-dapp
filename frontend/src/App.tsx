@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import QRCode from "qrcode";
 import { Web3 } from "web3";
+import { x402Client, x402HTTPClient, wrapFetchWithPayment } from "@x402/fetch";
+import { ExactEvmScheme } from "@x402/evm/exact/client";
 import {
   createPublicClient,
   createWalletClient,
@@ -14,8 +16,16 @@ import {
   type Abi,
   type Address,
 } from "viem";
+import { baseSepolia } from "viem/chains";
 
 import systemConfig from "./contracts/WarrantySystem.json";
+import {
+  filterProductsByOwner,
+  publicProductUrl,
+  withRetry,
+  type ProductFilter,
+  type RegistrationStage,
+} from "./app-utils";
 
 const manager = systemConfig.contracts.manager as {
   address: Address;
@@ -58,6 +68,7 @@ type Product = {
   warrantyPeriod: bigint;
   originalPrice: bigint;
   primaryIpfsHash: string;
+  metadataIpfsHash: string;
   currentOwner: Address;
   originalCreator: Address;
   tokenId: bigint;
@@ -194,8 +205,11 @@ export default function App() {
   const [busy, setBusy] = useState("");
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
-  const [registrationStage, setRegistrationStage] = useState<"upload" | "approve" | "register">("upload");
+  const [registrationStage, setRegistrationStage] = useState<RegistrationStage>("upload");
   const [registrationIpfsUri, setRegistrationIpfsUri] = useState("");
+  const [registrationMetadataUri, setRegistrationMetadataUri] = useState("");
+  const [productFilter, setProductFilter] = useState<ProductFilter>("all");
+  const [x402Proof, setX402Proof] = useState<{ transaction: string; report: unknown } | null>(null);
   const detailRequestId = useRef(0);
   const registrationFormRef = useRef<HTMLFormElement>(null);
 
@@ -203,7 +217,7 @@ export default function App() {
   const ownedProducts = !account
     ? products
     : products.filter((product) => getAddress(product.currentOwner) === getAddress(account));
-  const visibleProducts = products;
+  const visibleProducts = filterProductsByOwner(products, productFilter, account);
   const isOwner = Boolean(
     account && selectedProduct && getAddress(account) === selectedProduct.currentOwner,
   );
@@ -217,8 +231,8 @@ export default function App() {
       throw new Error(`Wrong network: expected ${systemConfig.network.chainId}, received ${liveChainId}`);
     }
     const [nextProducts, nextManagerOwner] = await Promise.all([
-      readAllProducts(),
-      publicClient.readContract({ ...manager, functionName: "owner" }) as Promise<Address>,
+      withRetry(readAllProducts),
+      withRetry(() => publicClient.readContract({ ...manager, functionName: "owner" }) as Promise<Address>),
     ]);
     setProducts(nextProducts);
     setManagerOwner(nextManagerOwner);
@@ -229,11 +243,11 @@ export default function App() {
     }
     if (activeAccount) {
       setTokenBalance(
-        (await publicClient.readContract({
+        (await withRetry(() => publicClient.readContract({
           ...token,
           functionName: "balanceOf",
           args: [activeAccount as Address],
-        })) as bigint,
+        }))) as bigint,
       );
     } else {
       setTokenBalance(0n);
@@ -243,10 +257,10 @@ export default function App() {
   async function refreshDetail(id: bigint) {
     const requestId = ++detailRequestId.current;
     const [nextHistory, nextServices, nextDocuments, nextStatuses] = await Promise.all([
-      publicClient.readContract({ ...manager, functionName: "getOwnershipHistory", args: [id] }),
-      publicClient.readContract({ ...manager, functionName: "getServiceHistory", args: [id] }),
-      publicClient.readContract({ ...manager, functionName: "getDocuments", args: [id] }),
-      publicClient.readContract({ ...manager, functionName: "getStatusHistory", args: [id] }),
+      withRetry(() => publicClient.readContract({ ...manager, functionName: "getOwnershipHistoryPage", args: [id, 0n, 100n] })),
+      withRetry(() => publicClient.readContract({ ...manager, functionName: "getServiceHistoryPage", args: [id, 0n, 100n] })),
+      withRetry(() => publicClient.readContract({ ...manager, functionName: "getDocumentsPage", args: [id, 0n, 100n] })),
+      withRetry(() => publicClient.readContract({ ...manager, functionName: "getStatusHistoryPage", args: [id, 0n, 100n] })),
     ]);
     if (requestId !== detailRequestId.current) return;
     setHistory(nextHistory as OwnershipRecord[]);
@@ -270,7 +284,7 @@ export default function App() {
         setAccount(activeAccount);
         await refresh(activeAccount);
       } catch {
-        setError("Cannot reach the local blockchain.");
+        setError("Cannot reach the Sepolia RPC. Reload the page or try again shortly.");
       }
     };
 
@@ -300,7 +314,7 @@ export default function App() {
   useEffect(() => {
     if (!selectedId) return;
     refreshDetail(selectedId).catch(() => setError("Cannot read product history."));
-    const url = `${window.location.origin}/?product=${selectedId}`;
+    const url = publicProductUrl(window.location.origin, selectedId);
     QRCode.toDataURL(url, { width: 240, margin: 1, color: { dark: "#172019", light: "#f4f3e9" } })
       .then(setQrCode)
       .catch(() => setQrCode(""));
@@ -322,7 +336,7 @@ export default function App() {
       }
       refresh(activeAccount).catch(() => setError("Cannot refresh wallet data."));
     };
-    const chainChanged = () => window.location.reload();
+    const chainChanged = () => setMessage("");
     provider.on("accountsChanged", accountsChanged);
     provider.on("chainChanged", chainChanged);
     return () => {
@@ -554,7 +568,8 @@ export default function App() {
     }
     const body = new FormData();
     body.append("file", file);
-    const response = await fetch(`${IPFS_API}/api/ipfs/upload`, { method: "POST", body });
+    const headers = await createUploadAuthHeaders();
+    const response = await fetch(`${IPFS_API}/api/ipfs/upload`, { method: "POST", body, headers });
     const result = (await response.json()) as { uri?: string; error?: string };
     if (!response.ok || !result.uri) {
       throw new Error(result.error ?? `IPFS upload failed with status ${response.status}`);
@@ -565,6 +580,7 @@ export default function App() {
   function resetRegistrationDocument() {
     setRegistrationStage("upload");
     setRegistrationIpfsUri("");
+    setRegistrationMetadataUri("");
     setMessage("");
     setError("");
   }
@@ -584,11 +600,29 @@ export default function App() {
     setError("");
     setMessage(file?.size ? "Uploading the warranty document to IPFS..." : "Using the existing IPFS document...");
     try {
-      const uploaded = await uploadFile(file);
-      const ipfsHash = uploaded || existingIpfsHash;
-      setRegistrationIpfsUri(ipfsHash);
+      const body = new FormData();
+      for (const field of ["name", "category", "serialNumber", "purchaseDate", "warrantyDays", "originalPrice"]) {
+        body.append(field, data.get(field)?.toString() ?? "");
+      }
+      if (file?.size) body.append("file", file);
+      if (existingIpfsHash) body.append("documentUri", existingIpfsHash);
+      body.append("publicUrl", publicProductUrl(window.location.origin, products.length + 1));
+      const headers = await createUploadAuthHeaders();
+      const response = await fetch(`${IPFS_API}/api/ipfs/product-assets`, { method: "POST", body, headers });
+      const result = (await response.json()) as {
+        document?: { uri?: string };
+        metadata?: { uri?: string };
+        error?: string;
+      };
+      const documentUri = result.document?.uri;
+      const metadataUri = result.metadata?.uri;
+      if (!response.ok || !documentUri || !metadataUri) {
+        throw new Error(result.error ?? `IPFS asset upload failed with status ${response.status}`);
+      }
+      setRegistrationIpfsUri(documentUri);
+      setRegistrationMetadataUri(metadataUri);
       setRegistrationStage("approve");
-      setMessage(`Document ready: ${ipfsHash}`);
+      setMessage("Document and NFT metadata are pinned permanently in Filebase.");
     } catch (uploadError) {
       const detail = uploadError instanceof Error ? uploadError.message : "Unknown IPFS upload error";
       setMessage("");
@@ -638,7 +672,7 @@ export default function App() {
 
   async function submitRegistration(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (registrationStage !== "register" || !registrationIpfsUri) {
+    if (registrationStage !== "register" || !registrationIpfsUri || !registrationMetadataUri) {
       setError("Complete the IPFS upload and WTY approval steps first.");
       return;
     }
@@ -659,6 +693,7 @@ export default function App() {
           BigInt(Number(data.get("warrantyDays")) * 86_400),
           parseUnits(data.get("originalPrice")?.toString() ?? "0", 18),
           registrationIpfsUri,
+          registrationMetadataUri,
           account as Address,
         ],
       });
@@ -666,8 +701,111 @@ export default function App() {
     if (completed) {
       form.reset();
       setRegistrationIpfsUri("");
+      setRegistrationMetadataUri("");
       setRegistrationStage("upload");
     }
+  }
+
+  async function createUploadAuthHeaders() {
+    if (!account || !window.ethereum) throw new Error("Connect MetaMask before uploading to IPFS.");
+    const challengeResponse = await fetch(
+      `${IPFS_API}/api/auth/upload-challenge?address=${encodeURIComponent(account)}`,
+    );
+    const challenge = (await challengeResponse.json()) as { message?: string; nonce?: string; error?: string };
+    if (!challengeResponse.ok || !challenge.message || !challenge.nonce) {
+      throw new Error(challenge.error ?? "Cannot create an upload authorization challenge.");
+    }
+    const signature = await walletClient().signMessage({
+      account: account as Address,
+      message: challenge.message,
+    });
+    return {
+      "X-Wallet-Address": account,
+      "X-Wallet-Nonce": challenge.nonce,
+      "X-Wallet-Signature": signature,
+    };
+  }
+
+  async function buyExtendedReport() {
+    if (!selectedId || !account || !window.ethereum) {
+      setError("Connect MetaMask and select a product first.");
+      return;
+    }
+    setBusy("X402 payment");
+    setError("");
+    setX402Proof(null);
+    try {
+      const provider = window.ethereum;
+      const baseChainId = `0x${baseSepolia.id.toString(16)}`;
+      try {
+        await provider.request({ method: "wallet_switchEthereumChain", params: [{ chainId: baseChainId }] });
+      } catch (switchError) {
+        if ((switchError as { code?: number }).code !== 4902) throw switchError;
+        await provider.request({
+          method: "wallet_addEthereumChain",
+          params: [{
+            chainId: baseChainId,
+            chainName: baseSepolia.name,
+            nativeCurrency: baseSepolia.nativeCurrency,
+            rpcUrls: [baseSepolia.rpcUrls.default.http[0]],
+            blockExplorerUrls: [baseSepolia.blockExplorers.default.url],
+          }],
+        });
+      }
+      setMessage("Approve the 0.001 test USDC X402 payment in MetaMask.");
+      const baseWallet = createWalletClient({
+        account: account as Address,
+        chain: baseSepolia,
+        transport: custom(provider),
+      });
+      const signer = {
+        address: account as Address,
+        signTypedData: (payload: {
+          domain: Record<string, unknown>;
+          types: Record<string, unknown>;
+          primaryType: string;
+          message: Record<string, unknown>;
+        }) => baseWallet.signTypedData({ account: account as Address, ...payload }),
+      };
+      const coreClient = new x402Client().register("eip155:*", new ExactEvmScheme(signer));
+      const httpClient = new x402HTTPClient(coreClient);
+      const paidFetch = wrapFetchWithPayment(fetch, httpClient);
+      const response = await paidFetch(`${IPFS_API}/api/x402/report/${selectedId}`);
+      const report = await response.json();
+      if (!response.ok) {
+        throw new Error((report as { error?: string }).error ?? `Report request failed (${response.status})`);
+      }
+      const settlement = httpClient.getPaymentSettleResponse((name) => response.headers.get(name));
+      setX402Proof({ transaction: settlement.transaction, report });
+      setMessage(`X402 payment settled: ${settlement.transaction}`);
+    } catch (paymentError) {
+      const detail = paymentError instanceof Error ? paymentError.message : "Unknown X402 payment error";
+      setMessage("");
+      setError(`X402 payment failed: ${detail}`);
+    } finally {
+      try {
+        await ensureWalletChain();
+      } catch {
+        // The report remains available even if the user chooses to stay on Base Sepolia.
+      }
+      setBusy("");
+    }
+  }
+
+  function downloadX402Proof() {
+    if (!x402Proof || !selectedId) return;
+    const blob = new Blob([JSON.stringify({
+      productId: selectedId.toString(),
+      paidAt: new Date().toISOString(),
+      network: "eip155:84532",
+      ...x402Proof,
+    }, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = `x402-product-${selectedId}-payment-proof.json`;
+    anchor.click();
+    URL.revokeObjectURL(url);
   }
 
   async function submitTransfer(event: FormEvent<HTMLFormElement>) {
@@ -823,7 +961,13 @@ export default function App() {
 
       <section className="dashboard-grid" id="passports">
         <aside className="product-list" aria-label="Products">
-          <div className="list-heading"><h2>Product passports</h2><span>{visibleProducts.length}</span></div>
+          <div className="list-heading">
+            <div><h2>Product passports</h2><span>{visibleProducts.length}</span></div>
+            <div className="product-filter" aria-label="Filter products">
+              <button className={productFilter === "all" ? "active" : ""} onClick={() => setProductFilter("all")}>All</button>
+              <button className={productFilter === "mine" ? "active" : ""} onClick={() => setProductFilter("mine")} disabled={!account}>Mine</button>
+            </div>
+          </div>
           {visibleProducts.map((product) => (
             <button
               className={`product-row ${selectedId === product.productId ? "selected" : ""}`}
@@ -878,7 +1022,7 @@ export default function App() {
               {selectedProduct.safetyStatus !== 0 && <div className="danger-banner">Warning: this product is marked {safetyLabels[selectedProduct.safetyStatus].toLowerCase()}.</div>}
               <div className="public-tools">
                 {qrCode && <img src={qrCode} alt={`QR code for ${selectedProduct.name}`} />}
-                <div><p className="section-label">Public record</p><h3>Verify this passport</h3><p>Scan to open the permanent record with ownership, warranty and documents.</p><a href={`/?product=${selectedProduct.productId}`} onClick={(event) => { event.preventDefault(); openPublicProduct(selectedProduct.productId); }}>Open public page ↗</a><a className="x402-link" href={`${IPFS_API}/api/x402/report/${selectedProduct.productId}`} target="_blank" rel="noreferrer">Extended X402 report ↗</a></div>
+                <div><p className="section-label">Public record</p><h3>Verify this passport</h3><p>Scan to open the permanent record with ownership, warranty and documents.</p><a href={`/?product=${selectedProduct.productId}`} onClick={(event) => { event.preventDefault(); openPublicProduct(selectedProduct.productId); }}>Open public page ↗</a><button className="x402-link" type="button" onClick={buyExtendedReport} disabled={Boolean(busy)}>{busy === "X402 payment" ? "Processing payment..." : "Buy extended X402 report ↗"}</button>{x402Proof && <button className="x402-proof" type="button" onClick={downloadX402Proof}>Save payment proof</button>}</div>
               </div>
 
               <div className="records-grid">
@@ -911,7 +1055,7 @@ export default function App() {
             <label>Serial number<input name="serialNumber" required placeholder="Serial number" /></label>
             <label>Purchase date<input name="purchaseDate" type="date" required /></label>
             <label>Warranty period, days<input name="warrantyDays" type="number" min="1" required /></label>
-            <label>Original price, WTY<input name="originalPrice" type="number" min="0" required /></label>
+            <label>Original price, WTY<input name="originalPrice" type="number" min="0.000000000000000001" step="any" required /></label>
             <label className="wide-field">Warranty document<input name="file" type="file" onChange={resetRegistrationDocument} /></label>
             <label className="wide-field">Existing IPFS URI (optional)<input name="ipfsHash" placeholder="Only for a document already uploaded to IPFS" onChange={resetRegistrationDocument} /></label>
             <div className="registration-steps wide-field">
@@ -936,7 +1080,7 @@ export default function App() {
                   {busy === "Product registration" ? "Registering..." : "Register product"}
                 </button>
               </div>
-              {registrationIpfsUri && <output className="ipfs-result">IPFS document: {registrationIpfsUri}</output>}
+              {registrationIpfsUri && <output className="ipfs-result">IPFS document: {registrationIpfsUri}<br />NFT metadata: {registrationMetadataUri}</output>}
             </div>
           </form>
         </section>

@@ -1,13 +1,16 @@
 import assert from "node:assert/strict";
-import { mkdir, writeFile } from "node:fs/promises";
+import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
 
 import { network } from "hardhat";
 import { getAddress } from "viem";
 
-const TOKEN_ADDRESS = getAddress("0xb086a6D8d481bd1B15B18D7954976D9F67043309");
-const NFT_ADDRESS = getAddress("0x66B0D5E67a788275A88B814ED68378Ee9Fc3DA2f");
-const MANAGER_ADDRESS = getAddress("0x877ab79A17225108Bddb34b645d62a67A7fdB000");
+const deployment = JSON.parse(
+  await readFile(new URL("../deployments/11155111.json", import.meta.url), "utf8"),
+);
+const TOKEN_ADDRESS = getAddress(deployment.contracts.token.address);
+const NFT_ADDRESS = getAddress(deployment.contracts.nft.address);
+const MANAGER_ADDRESS = getAddress(deployment.contracts.manager.address);
 
 const { viem } = await network.create();
 const [deployer] = await viem.getWalletClients();

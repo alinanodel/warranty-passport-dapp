@@ -1,0 +1,43 @@
+[
+  {
+    "name": "iPhone 15",
+    "category": "Phone",
+    "serialNumber": "IPH15-DEMO-001",
+    "price": "800",
+    "file": "iphone-15-warranty.txt",
+    "documentUri": "ipfs://bafkreifdykwvyeddor3n4nhx2oi3qm76pyps3ckptrauwosq5f25wvk2i4",
+    "metadataUri": "ipfs://bafkreidjf47j36uf652z5463ozxukftxlvqg57vqsto3peyrjougmlvgzu",
+    "imageUri": "ipfs://bafkreib2ibvjq2aqkevqs5yjeqt6m3mpda7el7uxqvle5q2dncoc4uzq5i"
+  },
+  {
+    "name": "MacBook Air",
+    "category": "Computer",
+    "serialNumber": "MBA-DEMO-002",
+    "price": "1200",
+    "file": "macbook-air-warranty.txt",
+    "documentUri": "ipfs://bafkreian43vxdlh4kvv3pyt2437fjkfak2ozm5qtmgkvqzyat6atc2zfoi",
+    "metadataUri": "ipfs://bafkreianc5vssqyy3btwvocmqwzm4g37qad6q4idyhg2chpxlhoeopphbe",
+    "imageUri": "ipfs://bafkreib2i7gqlgvl54h7xsgmhyqw47nmgfyzkssj3sidjvxd22vf5pnvnu",
+    "serviceDocumentUri": "ipfs://bafkreida4oe3vtmpjkdlx3pas7u2qamrghteixnbpt6wbqjkol3ho6gbwe"
+  },
+  {
+    "name": "Electric Bicycle",
+    "category": "Mobility",
+    "serialNumber": "EBIKE-DEMO-003",
+    "price": "1800",
+    "file": "electric-bicycle-warranty.txt",
+    "documentUri": "ipfs://bafkreidsinmthpwm7y5dse5ktrsyhfv4d2rjjtky6vyytnp3mj2y2dlrri",
+    "metadataUri": "ipfs://bafkreiceu3lehuj5qihfayuk5surfcpdzq6nsbbglsqr3k6kfssdz6jm3i",
+    "imageUri": "ipfs://bafkreigmlhlhn5d3fznyjb3axzeewlpk2yln22kbag4o47ty44j3kjp73q"
+  },
+  {
+    "name": "Pictorial Art",
+    "category": "Art",
+    "serialNumber": "PA_102",
+    "price": "1234",
+    "file": "pictorial-art-warranty-PA-102.txt",
+    "documentUri": "ipfs://bafkreicmtbx5f7snomldabdm3f2y5qrc2y2e25okhlg3fn3ymyu2wxx2aa",
+    "metadataUri": "ipfs://bafkreibwqjiea2jwbuky43ebf74d3fnbk6pwdgmkumgikxjcelonqkabg4",
+    "imageUri": "ipfs://bafkreid6bfw2vhzfgqrwjottopws3ps3qem7sxna5zbk663ltsj7rvc2he"
+  }
+]

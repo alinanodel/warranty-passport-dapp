@@ -20,17 +20,16 @@ const feeRecipient = getAddress(
 const registrationFee = parseEther("10");
 const transferFee = parseEther("5");
 const registrationReward = parseEther("20");
+const tokenConstructorArgs = [deployer.account.address, parseEther("1000000")] as const;
 
 console.log("Deploying Warranty Passport system...");
 console.log("Deployer:", deployer.account.address);
 console.log("System owner:", systemOwner);
 
-const token = await viem.deployContract("WarrantyToken", [
-  deployer.account.address,
-  parseEther("1000000"),
-]);
-const nft = await viem.deployContract("WarrantyNFT", [deployer.account.address]);
-const manager = await viem.deployContract("WarrantyManager", [
+const token = await viem.deployContract("WarrantyToken", tokenConstructorArgs);
+const nftConstructorArgs = [deployer.account.address] as const;
+const nft = await viem.deployContract("WarrantyNFT", nftConstructorArgs);
+const managerConstructorArgs = [
   deployer.account.address,
   nft.address,
   token.address,
@@ -38,7 +37,8 @@ const manager = await viem.deployContract("WarrantyManager", [
   registrationFee,
   transferFee,
   registrationReward,
-]);
+] as const;
+const manager = await viem.deployContract("WarrantyManager", managerConstructorArgs);
 
 const setManagerHash = await nft.write.setManager([manager.address]);
 await publicClient.waitForTransactionReceipt({ hash: setManagerHash });
@@ -88,6 +88,7 @@ if (seedDemo) {
       now,
       365n * 86_400n,
       product.price,
+      product.ipfsHash,
       product.ipfsHash,
       systemOwner,
     ]);
@@ -139,6 +140,7 @@ assert.equal(await manager.read.totalProducts(), seedDemo ? 3n : 0n);
 const frontendContractPath = resolve(
   "../frontend/src/contracts/WarrantySystem.json",
 );
+const deploymentPath = resolve(`deployments/${chainId}.json`);
 const frontendConfig = {
   network: {
     name: chainId === 11155111 ? "Sepolia" : "Hardhat Local",
@@ -167,10 +169,36 @@ await writeFile(
   `${JSON.stringify(frontendConfig, null, 2)}\n`,
   "utf8",
 );
+await mkdir(dirname(deploymentPath), { recursive: true });
+await writeFile(deploymentPath, `${JSON.stringify({
+  chainId,
+  network: chainId === 11155111 ? "sepolia" : "local",
+  deployedAt: new Date().toISOString(),
+  deployer: deployer.account.address,
+  systemOwner,
+  contracts: {
+    token: {
+      address: token.address,
+      contract: "contracts/WarrantyToken.sol:WarrantyToken",
+      constructorArgs: [tokenConstructorArgs[0], tokenConstructorArgs[1].toString()],
+    },
+    nft: {
+      address: nft.address,
+      contract: "contracts/WarrantyNFT.sol:WarrantyNFT",
+      constructorArgs: [...nftConstructorArgs],
+    },
+    manager: {
+      address: manager.address,
+      contract: "contracts/WarrantyManager.sol:WarrantyManager",
+      constructorArgs: managerConstructorArgs.map((value) => value.toString()),
+    },
+  },
+}, null, 2)}\n`, "utf8");
 
 console.log("WarrantyManager:", manager.address);
 console.log("WarrantyNFT:", nft.address);
 console.log("WarrantyToken:", token.address);
 console.log("Demo products:", seedDemo ? demoProducts.length : 0);
 console.log("Frontend contract data:", frontendContractPath);
+console.log("Deployment manifest:", deploymentPath);
 console.log("Deployment verified successfully.");

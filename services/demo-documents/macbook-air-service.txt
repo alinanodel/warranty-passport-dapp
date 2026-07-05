@@ -1,0 +1,5 @@
+WARRANTY PASSPORT SERVICE RECORD
+Product: MacBook Air
+Serial: MBA-DEMO-002
+Service: Annual hardware inspection
+Result: Battery, display, keyboard and ports passed diagnostics.

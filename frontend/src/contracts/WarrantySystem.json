@@ -11,7 +11,7 @@
   },
   "contracts": {
     "manager": {
-      "address": "0x877ab79A17225108Bddb34b645d62a67A7fdB000",
+      "address": "0x2232c9bf2f106008fb0f0a4a4c395c7ea3f4aa61",
       "abi": [
         {
           "inputs": [
@@ -469,6 +469,62 @@
               "internalType": "uint256",
               "name": "productId",
               "type": "uint256"
+            },
+            {
+              "internalType": "uint256",
+              "name": "offset",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint256",
+              "name": "limit",
+              "type": "uint256"
+            }
+          ],
+          "name": "getDocumentsPage",
+          "outputs": [
+            {
+              "components": [
+                {
+                  "internalType": "string",
+                  "name": "documentType",
+                  "type": "string"
+                },
+                {
+                  "internalType": "string",
+                  "name": "ipfsHash",
+                  "type": "string"
+                },
+                {
+                  "internalType": "uint256",
+                  "name": "addedAt",
+                  "type": "uint256"
+                },
+                {
+                  "internalType": "address",
+                  "name": "addedBy",
+                  "type": "address"
+                }
+              ],
+              "internalType": "struct WarrantyManager.DocumentRecord[]",
+              "name": "records",
+              "type": "tuple[]"
+            },
+            {
+              "internalType": "uint256",
+              "name": "total",
+              "type": "uint256"
+            }
+          ],
+          "stateMutability": "view",
+          "type": "function"
+        },
+        {
+          "inputs": [
+            {
+              "internalType": "uint256",
+              "name": "productId",
+              "type": "uint256"
             }
           ],
           "name": "getOwnershipHistory",
@@ -494,6 +550,57 @@
               "internalType": "struct WarrantyManager.OwnershipRecord[]",
               "name": "",
               "type": "tuple[]"
+            }
+          ],
+          "stateMutability": "view",
+          "type": "function"
+        },
+        {
+          "inputs": [
+            {
+              "internalType": "uint256",
+              "name": "productId",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint256",
+              "name": "offset",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint256",
+              "name": "limit",
+              "type": "uint256"
+            }
+          ],
+          "name": "getOwnershipHistoryPage",
+          "outputs": [
+            {
+              "components": [
+                {
+                  "internalType": "address",
+                  "name": "owner",
+                  "type": "address"
+                },
+                {
+                  "internalType": "uint256",
+                  "name": "transferredAt",
+                  "type": "uint256"
+                },
+                {
+                  "internalType": "uint256",
+                  "name": "transferPrice",
+                  "type": "uint256"
+                }
+              ],
+              "internalType": "struct WarrantyManager.OwnershipRecord[]",
+              "name": "records",
+              "type": "tuple[]"
+            },
+            {
+              "internalType": "uint256",
+              "name": "total",
+              "type": "uint256"
             }
           ],
           "stateMutability": "view",
@@ -549,6 +656,11 @@
                 {
                   "internalType": "string",
                   "name": "primaryIpfsHash",
+                  "type": "string"
+                },
+                {
+                  "internalType": "string",
+                  "name": "metadataIpfsHash",
                   "type": "string"
                 },
                 {
@@ -661,6 +773,67 @@
               "internalType": "uint256",
               "name": "productId",
               "type": "uint256"
+            },
+            {
+              "internalType": "uint256",
+              "name": "offset",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint256",
+              "name": "limit",
+              "type": "uint256"
+            }
+          ],
+          "name": "getServiceHistoryPage",
+          "outputs": [
+            {
+              "components": [
+                {
+                  "internalType": "string",
+                  "name": "serviceType",
+                  "type": "string"
+                },
+                {
+                  "internalType": "string",
+                  "name": "description",
+                  "type": "string"
+                },
+                {
+                  "internalType": "string",
+                  "name": "ipfsHash",
+                  "type": "string"
+                },
+                {
+                  "internalType": "uint256",
+                  "name": "servicedAt",
+                  "type": "uint256"
+                },
+                {
+                  "internalType": "address",
+                  "name": "addedBy",
+                  "type": "address"
+                }
+              ],
+              "internalType": "struct WarrantyManager.ServiceRecord[]",
+              "name": "records",
+              "type": "tuple[]"
+            },
+            {
+              "internalType": "uint256",
+              "name": "total",
+              "type": "uint256"
+            }
+          ],
+          "stateMutability": "view",
+          "type": "function"
+        },
+        {
+          "inputs": [
+            {
+              "internalType": "uint256",
+              "name": "productId",
+              "type": "uint256"
             }
           ],
           "name": "getStatusHistory",
@@ -696,6 +869,67 @@
               "internalType": "struct WarrantyManager.StatusRecord[]",
               "name": "",
               "type": "tuple[]"
+            }
+          ],
+          "stateMutability": "view",
+          "type": "function"
+        },
+        {
+          "inputs": [
+            {
+              "internalType": "uint256",
+              "name": "productId",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint256",
+              "name": "offset",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint256",
+              "name": "limit",
+              "type": "uint256"
+            }
+          ],
+          "name": "getStatusHistoryPage",
+          "outputs": [
+            {
+              "components": [
+                {
+                  "internalType": "enum WarrantyManager.WarrantyStatus",
+                  "name": "warrantyStatus",
+                  "type": "uint8"
+                },
+                {
+                  "internalType": "enum WarrantyManager.SafetyStatus",
+                  "name": "safetyStatus",
+                  "type": "uint8"
+                },
+                {
+                  "internalType": "bool",
+                  "name": "problematic",
+                  "type": "bool"
+                },
+                {
+                  "internalType": "uint256",
+                  "name": "changedAt",
+                  "type": "uint256"
+                },
+                {
+                  "internalType": "address",
+                  "name": "changedBy",
+                  "type": "address"
+                }
+              ],
+              "internalType": "struct WarrantyManager.StatusRecord[]",
+              "name": "records",
+              "type": "tuple[]"
+            },
+            {
+              "internalType": "uint256",
+              "name": "total",
+              "type": "uint256"
             }
           ],
           "stateMutability": "view",
@@ -767,7 +1001,12 @@
             },
             {
               "internalType": "string",
-              "name": "ipfsHash",
+              "name": "documentIpfsHash",
+              "type": "string"
+            },
+            {
+              "internalType": "string",
+              "name": "metadataIpfsHash",
               "type": "string"
             },
             {
@@ -975,7 +1214,7 @@
       ]
     },
     "nft": {
-      "address": "0x66B0D5E67a788275A88B814ED68378Ee9Fc3DA2f",
+      "address": "0xd12d2e9d46ee4c9905aaff9573ae90bf98b78cd2",
       "abi": [
         {
           "inputs": [
@@ -1614,7 +1853,7 @@
       ]
     },
     "token": {
-      "address": "0xb086a6D8d481bd1B15B18D7954976D9F67043309",
+      "address": "0xdb27f9a0152180dbd53832f491c68badbe58e339",
       "abi": [
         {
           "inputs": [
