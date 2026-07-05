@@ -21,6 +21,7 @@ import { baseSepolia } from "viem/chains";
 import systemConfig from "./contracts/WarrantySystem.json";
 import {
   filterProductsByOwner,
+  pageRecords,
   publicProductUrl,
   withRetry,
   type ProductFilter,
@@ -263,10 +264,10 @@ export default function App() {
       withRetry(() => publicClient.readContract({ ...manager, functionName: "getStatusHistoryPage", args: [id, 0n, 100n] })),
     ]);
     if (requestId !== detailRequestId.current) return;
-    setHistory(nextHistory as OwnershipRecord[]);
-    setServices(nextServices as ServiceRecord[]);
-    setDocuments(nextDocuments as DocumentRecord[]);
-    setStatusHistory(nextStatuses as StatusRecord[]);
+    setHistory(pageRecords(nextHistory as unknown as readonly [readonly OwnershipRecord[], bigint]));
+    setServices(pageRecords(nextServices as unknown as readonly [readonly ServiceRecord[], bigint]));
+    setDocuments(pageRecords(nextDocuments as unknown as readonly [readonly DocumentRecord[], bigint]));
+    setStatusHistory(pageRecords(nextStatuses as unknown as readonly [readonly StatusRecord[], bigint]));
   }
 
   useEffect(() => {

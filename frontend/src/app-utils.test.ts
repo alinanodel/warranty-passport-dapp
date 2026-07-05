@@ -1,6 +1,12 @@
 import { describe, expect, it, vi } from "vitest";
 
-import { advanceRegistrationStage, filterProductsByOwner, publicProductUrl, withRetry } from "./app-utils";
+import {
+  advanceRegistrationStage,
+  filterProductsByOwner,
+  pageRecords,
+  publicProductUrl,
+  withRetry,
+} from "./app-utils";
 
 describe("registration flow", () => {
   it("requires upload before approval and approval before registration", () => {
@@ -20,6 +26,11 @@ describe("product views", () => {
 
   it("builds a permanent public verification URL", () => {
     expect(publicProductUrl("https://example.test/", 4n)).toBe("https://example.test/?product=4");
+  });
+
+  it("unwraps records returned by paginated contract getters", () => {
+    const records = [{ ipfsHash: "ipfs://bafy-document" }];
+    expect(pageRecords([records, 1n])).toEqual(records);
   });
 });
 

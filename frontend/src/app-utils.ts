@@ -14,6 +14,10 @@ export function publicProductUrl(origin: string, productId: bigint | number | st
   return `${origin.replace(/\/$/, "")}/?product=${productId.toString()}`;
 }
 
+export function pageRecords<T>(page: readonly [readonly T[], bigint]): T[] {
+  return [...page[0]];
+}
+
 export function advanceRegistrationStage(
   stage: RegistrationStage,
   completed: "upload" | "approve",
