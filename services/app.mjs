@@ -26,6 +26,7 @@ export function createApp({
   const uploadWindows = new Map();
 
   app.disable("x-powered-by");
+  app.set("trust proxy", 1);
   app.use(cors({
     origin: corsOrigin === "*" ? "*" : corsOrigin.split(",").map((value) => value.trim()),
     exposedHeaders: ["PAYMENT-REQUIRED", "PAYMENT-RESPONSE"],

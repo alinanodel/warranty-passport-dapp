@@ -95,6 +95,7 @@ describe("Warranty Passport services", () => {
     assert.ok(response.headers.get("payment-required"));
     const challenge = await response.json();
     assert.equal(challenge.accepts[0].network, "eip155:84532");
+    assert.equal(challenge.resource.url, "https://services.example.test/api/x402/report/4");
     const paidAttempt = await fetch(`${baseUrl}/api/x402/report/4`, { headers: { "PAYMENT-SIGNATURE": "test" } });
     assert.equal(paidAttempt.status, 503);
   });
