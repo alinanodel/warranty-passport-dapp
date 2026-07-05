@@ -1,0 +1,67 @@
+{
+  "productId": "1",
+  "paidAt": "2026-07-05T15:27:26.461Z",
+  "network": "eip155:84532",
+  "transaction": "0x43504eaa8b54f2fa3c7233018a137dde9ca76896155c0c7ede86a7db736969f9",
+  "report": {
+    "productId": "1",
+    "product": {
+      "productId": "1",
+      "name": "iPhone 15",
+      "category": "Phone",
+      "serialNumber": "IPH15-DEMO-001",
+      "purchaseDate": "1783260060",
+      "warrantyPeriod": "31536000",
+      "originalPrice": "800000000000000000000",
+      "primaryIpfsHash": "ipfs://bafkreifdykwvyeddor3n4nhx2oi3qm76pyps3ckptrauwosq5f25wvk2i4",
+      "metadataIpfsHash": "ipfs://bafkreidjf47j36uf652z5463ozxukftxlvqg57vqsto3peyrjougmlvgzu",
+      "currentOwner": "0x300f746efD00294c7C3c5814D54bC6FE3CA2bd42",
+      "originalCreator": "0x34a6746F8BC407A98957cdF565dCEDDca5420E77",
+      "tokenId": "1",
+      "safetyStatus": 0,
+      "problematic": false,
+      "exists": true
+    },
+    "warrantyStatus": 2,
+    "ownership": [
+      {
+        "owner": "0x34a6746F8BC407A98957cdF565dCEDDca5420E77",
+        "transferredAt": "1783260072",
+        "transferPrice": "800000000000000000000"
+      },
+      {
+        "owner": "0x300f746efD00294c7C3c5814D54bC6FE3CA2bd42",
+        "transferredAt": "1783260324",
+        "transferPrice": "100000000000000000000"
+      }
+    ],
+    "services": [],
+    "documents": [
+      {
+        "documentType": "Warranty document",
+        "ipfsHash": "ipfs://bafkreifdykwvyeddor3n4nhx2oi3qm76pyps3ckptrauwosq5f25wvk2i4",
+        "addedAt": "1783260072",
+        "addedBy": "0x34a6746F8BC407A98957cdF565dCEDDca5420E77"
+      }
+    ],
+    "statuses": [
+      {
+        "warrantyStatus": 0,
+        "safetyStatus": 0,
+        "problematic": false,
+        "changedAt": "1783260072",
+        "changedBy": "0x34a6746F8BC407A98957cdF565dCEDDca5420E77"
+      },
+      {
+        "warrantyStatus": 2,
+        "safetyStatus": 0,
+        "problematic": false,
+        "changedAt": "1783260324",
+        "changedBy": "0x34a6746F8BC407A98957cdF565dCEDDca5420E77"
+      }
+    ],
+    "paidWith": "x402",
+    "network": "eip155:84532",
+    "generatedAt": "2026-07-05T15:27:17.405Z"
+  }
+}

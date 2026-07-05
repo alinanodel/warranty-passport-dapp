@@ -96,6 +96,13 @@ npm run check:cids
 
 8. Scan a product QR with a phone without MetaMask. Confirm the page opens and the Electric Bicycle Lost warning is visible.
 
+Verified X402 transaction: [`0x43504eaa8b54f2fa3c7233018a137dde9ca76896155c0c7ede86a7db736969f9`](https://sepolia.basescan.org/tx/0x43504eaa8b54f2fa3c7233018a137dde9ca76896155c0c7ede86a7db736969f9).
+
+Submission evidence:
+
+- X402 settlement proof: `evidence/x402-product-1-payment-proof.json`
+- Phone QR verification with the Electric Bicycle Lost warning: `evidence/qr-electric-bicycle-phone.png`
+
 ## Environment variables
 
 See `contracts/.env.example` and `services/.env.example`. Secrets belong in Hardhat keystore, Render or the provider dashboard. Never commit a private key, Filebase token or Etherscan key.

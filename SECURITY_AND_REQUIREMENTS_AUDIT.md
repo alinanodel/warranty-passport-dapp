@@ -4,7 +4,7 @@ Date: 2026-07-05
 
 ## Decision
 
-The hardened contracts are deployed to Sepolia and verified as Exact Match. All demo IPFS references are pinned and publicly retrievable from Filebase. Release remains incomplete until Render is updated, one real X402 settlement is recorded and a phone QR test is preserved. No audit can guarantee that a contract is impossible to hack. This assessment is suitable for a student testnet demonstration, not for custody of real-value assets.
+The hardened contracts are deployed to Sepolia and verified as Exact Match. All demo IPFS references are pinned and publicly retrievable from Filebase. The Vercel frontend and Render API are public, live X402 settlement is recorded, and a phone QR test is preserved. All project release gates are complete. No audit can guarantee that a contract is impossible to hack. This assessment is suitable for a student testnet demonstration, not for custody of real-value assets.
 
 Current Sepolia addresses:
 
@@ -23,12 +23,12 @@ Current Sepolia addresses:
 | Ownership/document/service/status histories | Complete | Paginated getters and UI records |
 | Service Record with IPFS | Complete | MacBook inspection record on-chain |
 | Lost/Stolen warning | Complete | Electric Bicycle marked Lost |
-| Public page and QR | Complete | Scan from a phone without MetaMask |
+| Public page and QR | Complete | Phone camera opened the Electric Bicycle page without MetaMask |
 | All products / My products | Complete | Filter and frontend test |
 | Wallet-authorized upload | Complete | Signature challenge and backend tests |
-| Live X402 report | Complete in code | Set live mode, settle USDC and save proof |
+| Live X402 report | Complete | Base Sepolia USDC settlement and proof verified |
 | Exact Match verification | Complete | All three Etherscan pages confirmed |
-| Vercel/Render deployment | Configured | Deploy after new contract JSON exists |
+| Vercel/Render deployment | Complete | Public frontend and API verified |
 
 ## Security controls
 
@@ -64,6 +64,23 @@ Current Sepolia addresses:
 - New `contracts/deployments/11155111.json`: complete.
 - Three Etherscan **Exact Match** pages: complete.
 - Successful `npm run check:cids`, including `PA_102` and service CID: complete.
-- Render `/health` showing Filebase and live X402.
-- X402 proof JSON and Base Sepolia transaction hash.
-- Screenshot of Lost warning and phone screenshot of QR-opened public page.
+- Render `/health` showing Filebase and live X402: complete.
+- X402 proof JSON and Base Sepolia transaction hash: complete.
+- Phone screenshot of the QR-opened Lost product page: complete.
+
+Verified X402 settlement:
+
+- Product: iPhone 15 (`productId=1`)
+- Network: Base Sepolia (`84532`)
+- Amount: `0.001 USDC`
+- Payer: `0x300f746efD00294c7C3c5814D54bC6FE3CA2bd42`
+- Recipient: `0x34a6746F8BC407A98957cdF565dCEDDca5420E77`
+- Transaction: `0x43504eaa8b54f2fa3c7233018a137dde9ca76896155c0c7ede86a7db736969f9`
+- Proof file: `evidence/x402-product-1-payment-proof.json`
+
+Verified QR test:
+
+- Device: phone camera and mobile browser, without MetaMask
+- Product: Electric Bicycle (`EBIKE-DEMO-003`)
+- Public warning: `PROBLEMATIC` / `LOST`
+- Evidence file: `evidence/qr-electric-bicycle-phone.png`
