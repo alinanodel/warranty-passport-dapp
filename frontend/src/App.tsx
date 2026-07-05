@@ -194,7 +194,10 @@ export default function App() {
   const [busy, setBusy] = useState("");
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
+  const [registrationStage, setRegistrationStage] = useState<"upload" | "approve" | "register">("upload");
+  const [registrationIpfsUri, setRegistrationIpfsUri] = useState("");
   const detailRequestId = useRef(0);
+  const registrationFormRef = useRef<HTMLFormElement>(null);
 
   const selectedProduct = products.find((product) => product.productId === selectedId);
   const ownedProducts = !account
@@ -522,6 +525,7 @@ export default function App() {
       await refresh();
       if (selectedId) await refreshDetail(selectedId);
       setMessage(`${label} completed successfully.`);
+      return true;
     } catch (actionError) {
       setMessage("");
       const error = actionError as {
@@ -537,6 +541,7 @@ export default function App() {
           ?? "Unknown transaction error";
         setError(`${label} failed: ${detail}`);
       }
+      return false;
     } finally {
       setBusy("");
     }
@@ -557,9 +562,16 @@ export default function App() {
     return result.uri;
   }
 
-  async function submitRegistration(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    const form = event.currentTarget;
+  function resetRegistrationDocument() {
+    setRegistrationStage("upload");
+    setRegistrationIpfsUri("");
+    setMessage("");
+    setError("");
+  }
+
+  async function prepareRegistrationDocument() {
+    const form = registrationFormRef.current;
+    if (!form) return;
     const data = new FormData(form);
     const file = data.get("file") as File | null;
     const existingIpfsHash = data.get("ipfsHash")?.toString().trim() ?? "";
@@ -567,14 +579,76 @@ export default function App() {
       setError("Choose a warranty document or enter an existing IPFS URI.");
       return;
     }
-    await runAction("Product registration", async () => {
-      await ensureAllowance(BigInt(systemConfig.fees.registrationFee));
+
+    setBusy("IPFS upload");
+    setError("");
+    setMessage(file?.size ? "Uploading the warranty document to IPFS..." : "Using the existing IPFS document...");
+    try {
       const uploaded = await uploadFile(file);
       const ipfsHash = uploaded || existingIpfsHash;
+      setRegistrationIpfsUri(ipfsHash);
+      setRegistrationStage("approve");
+      setMessage(`Document ready: ${ipfsHash}`);
+    } catch (uploadError) {
+      const detail = uploadError instanceof Error ? uploadError.message : "Unknown IPFS upload error";
+      setMessage("");
+      setError(`IPFS upload failed: ${detail}`);
+    } finally {
+      setBusy("");
+    }
+  }
+
+  async function approveRegistrationFee() {
+    if (!account || !registrationIpfsUri) return;
+    const registrationFee = BigInt(systemConfig.fees.registrationFee);
+    setBusy("WTY approval");
+    setError("");
+    setMessage(`Checking ${chain.name} network and WTY allowance...`);
+    try {
+      await ensureWalletChain();
+      const allowance = (await publicClient.readContract({
+        ...token,
+        functionName: "allowance",
+        args: [account as Address, manager.address],
+      })) as bigint;
+      if (allowance < registrationFee) {
+        setMessage("Confirm the 10 WTY spending approval in MetaMask.");
+        const hash = await walletClient().writeContract({
+          ...token,
+          functionName: "approve",
+          args: [manager.address, registrationFee],
+        });
+        setMessage("WTY approval sent. Waiting for confirmation...");
+        await publicClient.waitForTransactionReceipt({ hash });
+      }
+      setRegistrationStage("register");
+      setMessage("WTY spending approved. Continue to product registration.");
+    } catch (approvalError) {
+      const error = approvalError as { code?: number; shortMessage?: string; message?: string };
+      setMessage("");
+      if (error.code === 4001) {
+        setError("WTY approval was cancelled in MetaMask.");
+      } else {
+        setError(`WTY approval failed: ${error.shortMessage ?? error.message?.split("\n")[0] ?? "Unknown transaction error"}`);
+      }
+    } finally {
+      setBusy("");
+    }
+  }
+
+  async function submitRegistration(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (registrationStage !== "register" || !registrationIpfsUri) {
+      setError("Complete the IPFS upload and WTY approval steps first.");
+      return;
+    }
+    const form = event.currentTarget;
+    const data = new FormData(form);
+    const completed = await runAction("Product registration", async () => {
       const purchaseDate = BigInt(
         Math.floor(new Date(`${data.get("purchaseDate")}T00:00:00`).getTime() / 1000),
       );
-      const hash = await walletClient().writeContract({
+      return walletClient().writeContract({
         ...manager,
         functionName: "registerProduct",
         args: [
@@ -584,13 +658,16 @@ export default function App() {
           purchaseDate,
           BigInt(Number(data.get("warrantyDays")) * 86_400),
           parseUnits(data.get("originalPrice")?.toString() ?? "0", 18),
-          ipfsHash,
+          registrationIpfsUri,
           account as Address,
         ],
       });
-      form.reset();
-      return hash;
     });
+    if (completed) {
+      form.reset();
+      setRegistrationIpfsUri("");
+      setRegistrationStage("upload");
+    }
   }
 
   async function submitTransfer(event: FormEvent<HTMLFormElement>) {
@@ -828,16 +905,39 @@ export default function App() {
       {!publicProductId && isAdmin && (
         <section className="registration-section" id="register" aria-labelledby="registration-title">
           <div className="registration-intro"><p className="section-label dark-label">Admin / Store</p><h2 id="registration-title">Register a product</h2><p>Registration costs {formatUnits(BigInt(systemConfig.fees.registrationFee), 18)} WTY and rewards the product owner with WTY.</p></div>
-          <form className="product-form" onSubmit={submitRegistration}>
+          <form className="product-form" onSubmit={submitRegistration} ref={registrationFormRef}>
             <label>Product name<input name="name" required placeholder="Product name" /></label>
             <label>Category<input name="category" required placeholder="Category" /></label>
             <label>Serial number<input name="serialNumber" required placeholder="Serial number" /></label>
             <label>Purchase date<input name="purchaseDate" type="date" required /></label>
             <label>Warranty period, days<input name="warrantyDays" type="number" min="1" required /></label>
             <label>Original price, WTY<input name="originalPrice" type="number" min="0" required /></label>
-            <label className="wide-field">Warranty document<input name="file" type="file" /></label>
-            <label className="wide-field">Existing IPFS URI<input name="ipfsHash" placeholder="ipfs://... (if no file)" /></label>
-            <button className="submit-button wide-field" disabled={Boolean(busy)}>Upload, register and mint NFT</button>
+            <label className="wide-field">Warranty document<input name="file" type="file" onChange={resetRegistrationDocument} /></label>
+            <label className="wide-field">Existing IPFS URI (optional)<input name="ipfsHash" placeholder="Only for a document already uploaded to IPFS" onChange={resetRegistrationDocument} /></label>
+            <div className="registration-steps wide-field">
+              <div className={`registration-step ${registrationStage === "upload" ? "current" : "complete"}`}>
+                <span>01</span>
+                <div><strong>Prepare IPFS document</strong><small>Upload the selected file automatically or use an existing URI.</small></div>
+                <button type="button" onClick={prepareRegistrationDocument} disabled={Boolean(busy) || registrationStage !== "upload"}>
+                  {busy === "IPFS upload" ? "Uploading..." : "Upload document"}
+                </button>
+              </div>
+              <div className={`registration-step ${registrationStage === "approve" ? "current" : registrationStage === "register" ? "complete" : "locked"}`}>
+                <span>02</span>
+                <div><strong>Approve registration fee</strong><small>Allow the contract to spend 10 WTY.</small></div>
+                <button type="button" onClick={approveRegistrationFee} disabled={Boolean(busy) || registrationStage !== "approve"}>
+                  {busy === "WTY approval" ? "Waiting..." : "Approve 10 WTY"}
+                </button>
+              </div>
+              <div className={`registration-step ${registrationStage === "register" ? "current" : "locked"}`}>
+                <span>03</span>
+                <div><strong>Register and mint NFT</strong><small>Confirm the final product registration in MetaMask.</small></div>
+                <button className="submit-button" type="submit" disabled={Boolean(busy) || registrationStage !== "register"}>
+                  {busy === "Product registration" ? "Registering..." : "Register product"}
+                </button>
+              </div>
+              {registrationIpfsUri && <output className="ipfs-result">IPFS document: {registrationIpfsUri}</output>}
+            </div>
           </form>
         </section>
       )}

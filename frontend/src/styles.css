@@ -979,6 +979,105 @@ a:focus-visible {
   grid-column: 1 / -1;
 }
 
+.registration-steps {
+  display: grid;
+  gap: 10px;
+  margin-top: 2px;
+}
+
+.registration-step {
+  display: grid;
+  grid-template-columns: 36px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 13px;
+  min-height: 74px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 12px 13px;
+  background: #f7f7f4;
+  transition: border-color 160ms ease, background 160ms ease, opacity 160ms ease;
+}
+
+.registration-step > span {
+  display: grid;
+  width: 36px;
+  height: 36px;
+  place-items: center;
+  border-radius: 10px;
+  background: #e8e9e5;
+  color: #686e78;
+  font-size: 0.64rem;
+  font-weight: 850;
+}
+
+.registration-step div {
+  display: grid;
+  gap: 3px;
+}
+
+.registration-step strong {
+  font-size: 0.76rem;
+}
+
+.registration-step small {
+  color: #747a85;
+  font-size: 0.66rem;
+  line-height: 1.4;
+}
+
+.registration-step button {
+  min-width: 146px;
+  min-height: 40px;
+  border: 1px solid #d4d6d2;
+  border-radius: 10px;
+  padding: 0 14px;
+  background: var(--white);
+  color: var(--ink);
+  cursor: pointer;
+  font-size: 0.66rem;
+  font-weight: 800;
+}
+
+.registration-step.current {
+  border-color: rgba(49, 89, 245, 0.52);
+  background: rgba(49, 89, 245, 0.055);
+}
+
+.registration-step.current > span {
+  background: var(--blue);
+  color: var(--white);
+}
+
+.registration-step.complete > span {
+  background: #dff5e7;
+  color: #17834b;
+}
+
+.registration-step.locked {
+  opacity: 0.54;
+}
+
+.registration-step button:disabled {
+  cursor: not-allowed;
+  opacity: 0.48;
+}
+
+.registration-step .submit-button {
+  border-color: var(--ink);
+  background: var(--ink);
+  color: var(--white);
+}
+
+.ipfs-result {
+  overflow-wrap: anywhere;
+  border-left: 3px solid #38aa69;
+  padding: 9px 12px;
+  background: #eff9f2;
+  color: #27623d;
+  font-size: 0.68rem;
+  line-height: 1.5;
+}
+
 .submit-button {
   min-height: 54px;
   border: 0;
@@ -1169,6 +1268,15 @@ footer {
 
   .wide-field {
     grid-column: auto;
+  }
+
+  .registration-step {
+    grid-template-columns: 34px minmax(0, 1fr);
+  }
+
+  .registration-step button {
+    grid-column: 1 / -1;
+    width: 100%;
   }
 }
 
