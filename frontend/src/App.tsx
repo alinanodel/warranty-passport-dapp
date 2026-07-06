@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import QRCode from "qrcode";
-import { Web3 } from "web3";
 import { x402Client, x402HTTPClient, wrapFetchWithPayment } from "@x402/fetch";
 import { ExactEvmScheme } from "@x402/evm/exact/client";
 import {
@@ -8,6 +7,7 @@ import {
   createWalletClient,
   custom,
   defineChain,
+  fallback,
   formatEther,
   formatUnits,
   getAddress,
@@ -40,6 +40,13 @@ const IPFS_API = (
 const IPFS_GATEWAY = (
   import.meta.env.VITE_IPFS_GATEWAY ?? "https://ipfs.filebase.io/ipfs"
 ).replace(/\/$/, "");
+const rpcUrls = systemConfig.network.chainId === 11155111
+  ? Array.from(new Set([
+    systemConfig.network.rpcUrl,
+    "https://rpc.sepolia.org",
+    "https://sepolia.drpc.org",
+  ]))
+  : [systemConfig.network.rpcUrl];
 
 const chain = defineChain({
   id: systemConfig.network.chainId,
@@ -49,13 +56,15 @@ const chain = defineChain({
     symbol: "ETH",
     decimals: 18,
   },
-  rpcUrls: { default: { http: [systemConfig.network.rpcUrl] } },
+  rpcUrls: { default: { http: rpcUrls } },
 });
 const publicClient = createPublicClient({
   chain,
-  transport: http(systemConfig.network.rpcUrl),
+  transport: fallback(
+    rpcUrls.map((url) => http(url, { retryCount: 1, timeout: 8_000 })),
+    { retryCount: 1 },
+  ),
 });
-const web3 = new Web3(systemConfig.network.rpcUrl);
 
 const warrantyLabels = ["Active", "Expired", "Transferred", "Problematic"];
 const safetyLabels = ["Normal", "Lost", "Stolen"];
@@ -227,7 +236,7 @@ export default function App() {
   );
 
   async function refresh(activeAccount = account) {
-    const liveChainId = Number(await web3.eth.getChainId());
+    const liveChainId = await withRetry(() => publicClient.getChainId());
     if (liveChainId !== systemConfig.network.chainId) {
       throw new Error(`Wrong network: expected ${systemConfig.network.chainId}, received ${liveChainId}`);
     }
@@ -391,7 +400,7 @@ export default function App() {
           chainId: expectedChainId,
           chainName: chain.name,
           nativeCurrency: chain.nativeCurrency,
-          rpcUrls: [systemConfig.network.rpcUrl],
+          rpcUrls,
         }],
       });
     }

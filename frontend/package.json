@@ -16,8 +16,7 @@
     "qrcode": "latest",
     "react": "latest",
     "react-dom": "latest",
-    "viem": "latest",
-    "web3": "latest"
+    "viem": "latest"
   },
   "devDependencies": {
     "@types/qrcode": "latest",
