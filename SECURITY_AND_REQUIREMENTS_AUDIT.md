@@ -46,7 +46,7 @@ Current Sepolia addresses:
 
 - Solidity 0.8.28 with optimizer and `viaIR`: compiled.
 - Contract tests: 18 passed.
-- Backend tests: 7 passed.
+- Backend tests: 9 passed.
 - Frontend tests: 5 passed.
 - Production frontend build: passed.
 - Rerun `npm audit` immediately before submission.

@@ -48,7 +48,7 @@ cd ../services && npm test
 cd ../frontend && npm test && npm run build
 ```
 
-Expected result: 18 contract tests, 7 backend tests and 5 frontend tests pass, followed by a successful production build.
+Expected result: 18 contract tests, 9 backend tests and 5 frontend tests pass, followed by a successful production build.
 
 ## Release order
 
